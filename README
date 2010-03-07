@@ -1,0 +1,77 @@
+NAME
+    nagios-downtime - Send an external command to Nagios setting downtime
+    for a host
+
+SYNOPSIS
+    nagios-downtime
+        --server <nagios-server>
+        [--protocol={http,https}]
+        [--port=<http-port>]
+        --user <nagios-username>
+        --pass <nagios-password>
+        --hostname <host-that-you-want-to-be-down>
+        --message <comment-for-the-downtime>
+        [--start <timestamp>]
+        [--duration <seconds>]
+        [--help]
+
+    Timestamp is in no. of seconds since epoch. Duration is in seconds. Yes,
+    I'm lazy.
+
+DESCRIPTION
+    Nagios is a widely used systems monitoring application.
+
+    This script will schedule downtime for a given hostname for you in your
+    Nagios server from the command line, saving you the "painful" experience
+    of opening your browser and going through the Nagios web interface.
+
+    It's meant to be used as quick utility to schedule downtime unattended,
+    when launching scripts that are not run at some regular point in time
+    every day/week, but something you have to run at random times.
+
+    At present, there's no way to cancel a scheduled downtime.
+
+OPTIONS
+    "-help" Print a brief help message and exits.
+
+    "-server"
+            The nagios server hostname (ex.: "nagios.yourdomain.lan")
+
+    "-protocol"
+            If you're using https, you may specify "-protocol=https" or
+            "-port=443".
+
+    "-port" If you're running nagios on a port different from 443 (https) or
+            80 (http) then you need to specify the port number here (ex.:
+            "-port=2222").
+
+    "-user" Nagios username that you can use in the web interface
+
+    "-pass" Nagios password that you can use in the web interface
+
+    "-hostname"
+            The host for which you want to schedule downtime (ex.:
+            "blah.domain.com")
+
+    "-message"
+            Comment for the downtime (ex.: "Reinstallation in progress").
+            Max 40 chars.
+
+    "-start"
+            Timestamp for when the downtime should start. This is in seconds
+            since epoch, yes, Unix timestamp.
+
+            Defaults to now.
+
+    "-duration"
+            Duration of downtime. By default, 2 hours if not specified.
+
+AUTHOR
+    Cosimo Streppone, cosimo@cpan.org
+
+LICENSE AND COPYRIGHT
+    (C) 2010 Cosimo Streppone, cosimo@cpan.org
+
+    This library is free software; you can only redistribute it and/or
+    modify it under the same terms as Perl itself.
+

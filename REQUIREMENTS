@@ -1,0 +1,7 @@
+nagios-downtime is a Perl 5 script that requires:
+
+ * a working Nagios installation :)
+ * perl 5.8+
+ * DateTime (libdatetime-perl)
+ * Pod::Usage (libpod-usage-perl)
+ * WWW::Mechanize (libwww-mechanize-perl)

@@ -1,0 +1,209 @@
+#!/usr/bin/env perl
+#
+# Schedule downtime in Nagios for some host.
+# Example:
+#
+#   ./nagios-downtime --server mynagios.mydomain.lan \
+#       --user blah --password blah \
+#       --hostname myserver.mydomain.lan \
+#       --message "Testing a 15' downtime" \
+#       --duration 900
+#
+# For more usage information,
+#     $ ./nagios-downtime --help
+#
+# or:
+#     $ perldoc ./nagios-downtime
+#
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use DateTime;
+use Getopt::Long;
+use Pod::Usage;
+use WWW::Mechanize;
+
+GetOptions(
+    'user=s'     => \my $user,
+    'password=s' => \my $password,
+    'server=s'   => \my $server,
+    'proto=s'    => \(my $protocol = 'http'),
+    'port:i'     => \(my $port = 0),
+    'hostname=s' => \my $host,
+    'message=s'  => \my $message,
+    'start:s'    => \( my $downtime_start = time() ),
+    'duration:s' => \( my $downtime_duration = 3600 * 2 ),
+    'help|?'     => \my $help,
+) or die "Incorrect options?";
+
+if ($help) {
+    pod2usage(1);
+}
+
+$protocol = lc ($protocol || 'http');
+
+if ($protocol eq 'https' && $port == 0) {
+    $port = 443;
+} elsif ($protocol eq 'http' && $port == 0) {
+    $port = 80;
+}
+
+if ( !$message || !$server || !$user || !$password || !$host ) {
+    pod2usage("Missing options");
+}
+
+my $start_url = qq($proto://$server:$port/cgi-bin/nagios3/cmd.cgi?cmd_typ=55);
+
+my $mech = WWW::Mechanize->new();
+$mech->credentials( $user, $password );
+
+$mech->get($start_url)
+  or die "Couldn't open the nagios downtime screen!";
+
+#use Data::Dumper;
+#print Dumper($resp);
+
+my $dt_start = DateTime->from_epoch( epoch => $downtime_start );
+if ( !$dt_start ) {
+    die "Invalid start date $downtime_start?\n";
+}
+
+my $dt_end =
+  DateTime->from_epoch( epoch => $downtime_start + $downtime_duration );
+if ( !$dt_end ) {
+    die "Invalid end date? Duration was: $downtime_duration\n";
+}
+
+my %cmd_info = (
+    host       => $host,
+    com_author => 'Information Systems',
+    com_data   => $message,
+    start_time => $dt_start->ymd() . ' ' . $dt_start->hms(),
+    end_time   => $dt_end->ymd() . ' ' . $dt_end->hms(),
+    fixed      => 1,
+);
+
+#print Dumper(\%cmd_info), "\n";
+
+my $page_content;
+my $result = $mech->submit_form(
+    form_number => 0,
+    fields      => \%cmd_info,
+    button      => 'btnSubmit'
+);
+
+if ($result) {
+    $page_content = $result->content();
+}
+
+if ( $page_content && $page_content =~ m{successfully submitted}ims ) {
+    print "Command executed successfully!\n";
+}
+else {
+    print "Command failed?? How can it be?\n";
+}
+
+__END__
+
+=head1 NAME
+
+nagios-downtime - Send an external command to Nagios setting downtime for a host
+
+=head1 SYNOPSIS
+
+    nagios-downtime
+        --server <nagios-server>
+        [--protocol={http,https}]
+        [--port=<http-port>]
+        --user <nagios-username>
+        --pass <nagios-password>
+        --hostname <host-that-you-want-to-be-down>
+        --message <comment-for-the-downtime>
+        [--start <timestamp>]
+        [--duration <seconds>]
+        [--help]
+
+Timestamp is in no. of seconds since epoch.
+Duration is in seconds. Yes, I'm lazy.
+
+=head1 DESCRIPTION
+
+Nagios is a widely used systems monitoring application.
+
+This script will schedule downtime for a given hostname for you in your Nagios server
+from the command line, saving you the "painful" experience of opening your browser
+and going through the Nagios web interface.
+
+It's meant to be used as quick utility to schedule downtime unattended,
+when launching scripts that are not run at some regular point in time
+every day/week, but something you have to run at random times.
+
+At present, there's no way to cancel a scheduled downtime.
+
+=head1 OPTIONS
+
+=over 8
+
+=item C<-help>
+
+Print a brief help message and exits.
+
+=item C<-server>
+
+The nagios server hostname (ex.: C<nagios.yourdomain.lan>)
+
+=item C<-protocol>
+
+If you're using B<https>, you may specify C<-protocol=https> or C<-port=443>.
+
+=item C<-port>
+
+If you're running nagios on a port different from B<443> (https) or B<80> (http)
+then you need to specify the port number here (ex.: C<-port=2222>).
+
+=item C<-user>
+
+Nagios username that you can use in the web interface
+
+=item C<-pass>
+
+Nagios password that you can use in the web interface
+
+=item C<-hostname>
+
+The host for which you want to schedule downtime (ex.: C<blah.domain.com>)
+
+=item C<-message>
+
+Comment for the downtime (ex.: C<Reinstallation in progress>).
+Max 40 chars.
+
+=item C<-start>
+
+Timestamp for when the downtime should start.
+B<This is in seconds since epoch, yes, Unix timestamp>.
+
+Defaults to now.
+
+=item C<-duration>
+
+Duration of downtime. By default, 2 hours if not specified.
+
+=back
+
+=head1 AUTHOR
+
+Cosimo Streppone, L<cosimo@cpan.org>
+
+=head1 LICENSE AND COPYRIGHT
+
+(C) 2010 Cosimo Streppone, L<cosimo@cpan.org>
+
+This library is free software; you can only redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=cut
+
+# vim: set ts=4 sw=4 tw=90 nowrap nu

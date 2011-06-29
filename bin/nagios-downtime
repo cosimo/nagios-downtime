@@ -29,7 +29,7 @@ GetOptions(
     'user=s'     => \my $user,
     'password=s' => \my $password,
     'server=s'   => \my $server,
-    'proto=s'    => \(my $protocol = 'http'),
+    'protocol=s' => \(my $protocol = 'http'),
     'port:i'     => \(my $port = 0),
     'hostname=s' => \my $host,
     'message=s'  => \my $message,

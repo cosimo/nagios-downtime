@@ -94,8 +94,8 @@ my $result = $mech->submit_form(
     button      => 'btnSubmit'
 );
 
-if ($result) {
-    $page_content = $result->content();
+if ($result->is_success) {
+    $page_content = $result->decoded_content;
 }
 
 if ( $page_content && $page_content =~ m{successfully submitted}ims ) {

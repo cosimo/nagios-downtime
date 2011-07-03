@@ -54,7 +54,7 @@ if ( !$message || !$server || !$user || !$password || !$host ) {
     pod2usage("Missing options");
 }
 
-my $start_url = qq($proto://$server:$port/cgi-bin/nagios3/cmd.cgi?cmd_typ=55);
+my $start_url = qq($protocol://$server:$port/cgi-bin/nagios3/cmd.cgi?cmd_typ=55);
 
 my $mech = WWW::Mechanize->new();
 $mech->credentials( $user, $password );

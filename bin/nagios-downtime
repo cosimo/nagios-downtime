@@ -25,6 +25,9 @@ use Getopt::Long;
 use Pod::Usage;
 use WWW::Mechanize;
 
+my $cmd_typ;
+my %cmd_info;
+
 GetOptions(
     'user=s'     => \my $user,
     'password=s' => \my $password,
@@ -32,6 +35,7 @@ GetOptions(
     'protocol=s' => \(my $protocol = 'http'),
     'port:i'     => \(my $port = 0),
     'hostname=s' => \my $host,
+    'service:s'  => \(my $service = '0'),
     'message=s'  => \my $message,
     'start:s'    => \( my $downtime_start = time() ),
     'duration:s' => \( my $downtime_duration = 3600 * 2 ),
@@ -54,16 +58,19 @@ if ( !$message || !$server || !$user || !$password || !$host ) {
     pod2usage("Missing options");
 }
 
-my $start_url = qq($protocol://$server:$port/cgi-bin/nagios3/cmd.cgi?cmd_typ=55);
+if ($service eq '0') {
+    $cmd_typ = 55;
+} else {
+    $cmd_typ = 56;
+}
+
+my $start_url = qq($protocol://$server:$port/cgi-bin/nagios3/cmd.cgi?cmd_typ=$cmd_typ);
 
 my $mech = WWW::Mechanize->new();
 $mech->credentials( $user, $password );
 
 $mech->get($start_url)
   or die "Couldn't open the nagios downtime screen!";
-
-#use Data::Dumper;
-#print Dumper($resp);
 
 my $dt_start = DateTime->from_epoch( epoch => $downtime_start );
 if ( !$dt_start ) {
@@ -76,16 +83,26 @@ if ( !$dt_end ) {
     die "Invalid end date? Duration was: $downtime_duration\n";
 }
 
-my %cmd_info = (
-    host       => $host,
-    com_author => 'Information Systems',
-    com_data   => $message,
-    start_time => $dt_start->ymd() . ' ' . $dt_start->hms(),
-    end_time   => $dt_end->ymd() . ' ' . $dt_end->hms(),
-    fixed      => 1,
-);
-
-#print Dumper(\%cmd_info), "\n";
+if ($service eq '0') {
+    %cmd_info = (
+        host       => $host,
+        com_author => $user,
+        com_data   => $message,
+        start_time => $dt_start->ymd() . ' ' . $dt_start->hms(),
+        end_time   => $dt_end->ymd() . ' ' . $dt_end->hms(),
+        fixed      => 1,
+    );
+} else {
+    %cmd_info = (
+        host       => $host,
+        service    => $service,
+        com_author => $user,
+        com_data   => $message,
+        start_time => $dt_start->ymd() . ' ' . $dt_start->hms(),
+        end_time   => $dt_end->ymd() . ' ' . $dt_end->hms(),
+        fixed      => 1,
+    );
+}
 
 my $page_content;
 my $result = $mech->submit_form(
@@ -120,6 +137,7 @@ nagios-downtime - Send an external command to Nagios setting downtime for a host
         --user <nagios-username>
         --pass <nagios-password>
         --hostname <host-that-you-want-to-be-down>
+        [--service <service-that-you-want-to-be-down>]
         --message <comment-for-the-downtime>
         [--start <timestamp>]
         [--duration <seconds>]

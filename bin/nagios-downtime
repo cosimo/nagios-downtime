@@ -144,6 +144,7 @@ nagios-downtime - Send an external command to Nagios setting downtime for a host
         --hostname <host-that-you-want-to-be-down>
         [--service <service-that-you-want-to-be-down>]
         --message <comment-for-the-downtime>
+        [--author <name-of-author>]
         [--start <timestamp>]
         [--duration <seconds>]
         [--help]

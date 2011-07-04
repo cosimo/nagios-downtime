@@ -37,6 +37,7 @@ GetOptions(
     'hostname=s' => \my $host,
     'service:s'  => \(my $service = '0'),
     'message=s'  => \my $message,
+    'author:s'  => \(my $author = ''),
     'start:s'    => \( my $downtime_start = time() ),
     'duration:s' => \( my $downtime_duration = 3600 * 2 ),
     'help|?'     => \my $help,
@@ -64,6 +65,10 @@ if ($service eq '0') {
     $cmd_typ = 56;
 }
 
+if ($author eq '') {
+    $author = $user;
+}
+
 my $start_url = qq($protocol://$server:$port/cgi-bin/nagios3/cmd.cgi?cmd_typ=$cmd_typ);
 
 my $mech = WWW::Mechanize->new();
@@ -86,7 +91,7 @@ if ( !$dt_end ) {
 if ($service eq '0') {
     %cmd_info = (
         host       => $host,
-        com_author => $user,
+        com_author => $author,
         com_data   => $message,
         start_time => $dt_start->ymd() . ' ' . $dt_start->hms(),
         end_time   => $dt_end->ymd() . ' ' . $dt_end->hms(),
@@ -96,7 +101,7 @@ if ($service eq '0') {
     %cmd_info = (
         host       => $host,
         service    => $service,
-        com_author => $user,
+        com_author => $author,
         com_data   => $message,
         start_time => $dt_start->ymd() . ' ' . $dt_start->hms(),
         end_time   => $dt_end->ymd() . ' ' . $dt_end->hms(),
